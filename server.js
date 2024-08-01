@@ -4,10 +4,21 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const https = require('https');
 
+// Load SSL certificate
+const privateKey = fs.readFileSync(path.join(__dirname, 'privkey.pem'), 'utf8');
+const certificate = fs.readFileSync(path.join(__dirname, 'cert.pem'), 'utf8');
+const ca = fs.readFileSync(path.join(__dirname, 'chain.pem'), 'utf8');
+
+const credentials = {
+  key: privateKey,
+  cert: certificate,
+  ca: ca
+};
 
 const app = express();
-const PORT = 5000;
+const PORT = 5001;
 
 // Middleware
 app.use(cors());
@@ -21,7 +32,7 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    cb(null, Date.now()  + ext);
+    cb(null, Date.now() + ext);
   },
 });
 
@@ -52,9 +63,6 @@ app.delete('/delete/:filename', (req, res) => {
 });
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-
-
 
 const product_id = '03f4ec52-3b2d-4b1c-91a2-8873ddaaddf7';
 const phone_id = '29886';
@@ -106,12 +114,9 @@ app.post('/sendMessages', async (req, res) => {
   }
 });
 
+// Create HTTPS server
+const httpsServer = https.createServer(credentials, app);
 
-
-
-
-
-
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+httpsServer.listen(PORT, () => {
+  console.log(`Server running on https://localhost:${PORT}`);
 });
